@@ -11,6 +11,7 @@ $lines = file($filepath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 $parsedLogs = [];
 $statusCounts = [];
 $ipCounts = [];
+$timeBuckets = [];
 $threatCount = 0;
 
 foreach ($lines as $line) {
@@ -29,8 +30,16 @@ foreach ($lines as $line) {
 
         // IP frequency
         $ipCounts[$parsed['ip']] = ($ipCounts[$parsed['ip']] ?? 0) + 1;
+
+        // Parse timestamp into hour bucket
+        $time = strtotime(explode(':', $parsed['timestamp'], 2)[0]);
+        $hour = date('Y-m-d H:00', $time);
+
+        $timeBuckets[$hour] = ($timeBuckets[$hour] ?? 0) + 1;
     }
 }
+
+ksort($timeBuckets);
 ?>
 <!DOCTYPE html>
 <html>
@@ -61,6 +70,36 @@ foreach ($lines as $line) {
             data: statusData
         });
     </script>
+
+    <script>
+        const timelineData = {
+            labels: <?= json_encode(array_keys($timeBuckets)) ?>,
+            datasets: [{
+                label: 'Requests per Hour', 
+                data: <?= json_encode(array_values($timeBuckets)) ?>,
+                fill: false,
+                borderwidth: 2
+            }]
+        };
+
+        new Chart(document.getElementById('timelineChart'), {
+            type: 'line',
+            data: timelineData,
+            options: {
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+    <h2>Request Volume Over Time</h2>
+    <canvas id="timelineChart" width="600"></canvas>
 
     <h2>Top IP Addresses</h2>
     <ul>
