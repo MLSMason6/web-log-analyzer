@@ -92,5 +92,10 @@ foreach ($lines as $line) {
             <?php endif; ?>
         <?php endforeach; ?>
     </table>
+
+    <form method="POST" action="export_csv.php">
+        <input type="hidden" name="logs" value='<?= json_encode(array_filter($parsedLogs, fn($l) => !empty($l["threats"]))) ?>'>
+        <button type="submit">⬇ Export Flagged Requests to CSV</button>
+    </form>
 </body>
 </html>
